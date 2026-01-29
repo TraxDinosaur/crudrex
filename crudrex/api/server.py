@@ -315,8 +315,6 @@ class MockServer:
                 
             # Use root collection name (first part of path)
             root_collection = path_parts[0]
-            # Use hyphen-separated path for storage key
-            storage_key = path.replace('/', '-')
             
             # Ensure root collection exists
             if root_collection not in self.collections:
@@ -325,124 +323,228 @@ class MockServer:
             # Get current timestamp
             current_time = time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             
-            if request.method == 'GET':
-                # Return all items under this endpoint
-                if storage_key in self.collections[root_collection]:
-                    return jsonify(self.collections[root_collection][storage_key])
-                else:
-                    return jsonify({"items": []})
+            # Determine if this is an item-level operation (last part is a valid ID)
+            # An item-level operation has at least 2 parts and the last part looks like an ID
+            is_item_operation = (
+                len(path_parts) >= 2 and 
+                (path_parts[-1].isdigit() or 
+                 (len(path_parts[-1]) >= 8 and '-' in path_parts[-1]))  # UUID-like
+            )
             
-            elif request.method == 'POST':
-                data = request.get_json(force=True)
-                if not data:
-                    return jsonify({"error": "JSON data required"}), 400
+            if is_item_operation:
+                # Handle item-level operations
+                endpoint_key = '-'.join(path_parts[:-1])  # All parts except last
+                item_id = path_parts[-1]  # Last part is the item ID
+                
+                if request.method == 'GET':
+                    # Get specific item by ID
+                    if endpoint_key in self.collections[root_collection]:
+                        for item in self.collections[root_collection][endpoint_key].get("items", []):
+                            if str(item.get("id")) == str(item_id):
+                                return jsonify(item)
+                    return jsonify({"error": "Item not found"}), 404
                     
-                # Ensure the endpoint structure exists
-                if storage_key not in self.collections[root_collection]:
-                    self.collections[root_collection][storage_key] = {"items": []}
-                elif "items" not in self.collections[root_collection][storage_key]:
-                    self.collections[root_collection][storage_key] = {"items": []}
-                    
-                # Handle both object and array payloads
-                if isinstance(data, list):
-                    # If it's an array, process each item
-                    results = []
-                    for item in data:
-                        if isinstance(item, dict):
-                            # Extract ID or generate one
-                            item_id = item.pop('id', str(uuid.uuid4()))
-                            
-                            # Separate metadata from data
-                            item_data = {k: v for k, v in item.items()}
-                            
-                            # Create structured item
-                            structured_item = {
+                elif request.method == 'PUT':
+                    # Update specific item by ID
+                    data = request.get_json(force=True)
+                    if not data:
+                        return jsonify({"error": "JSON data required"}), 400
+                        
+                    if endpoint_key not in self.collections[root_collection]:
+                        return jsonify({"error": "Endpoint not found"}), 404
+                        
+                    # Find and update the item
+                    items = self.collections[root_collection][endpoint_key].get("items", [])
+                    for i, item in enumerate(items):
+                        if str(item.get("id")) == str(item_id):
+                            # Update the item
+                            updated_item = {
                                 "id": item_id,
-                                "createdAt": current_time,
+                                "createdAt": item.get("createdAt", current_time),
                                 "updatedAt": current_time,
-                                "data": item_data
+                                "data": data.get("data", data) if isinstance(data, dict) else data
                             }
+                            self.collections[root_collection][endpoint_key]["items"][i] = updated_item
+                            self.save_all_collections()
+                            return jsonify(updated_item)
                             
-                            self.collections[root_collection][storage_key]["items"].append(structured_item)
-                            results.append(structured_item)
-                    self.save_all_collections()
-                    return jsonify({"items": results}), 201
-                else:
-                    # If it's an object, process normally
-                    # Extract ID or generate one
-                    item_id = data.pop('id', str(uuid.uuid4()))
-                    
-                    # Separate metadata from data
-                    item_data = {k: v for k, v in data.items()}
-                    
-                    # Create structured item
-                    structured_item = {
+                    # If item not found, create new one
+                    new_item = {
                         "id": item_id,
                         "createdAt": current_time,
                         "updatedAt": current_time,
-                        "data": item_data
+                        "data": data.get("data", data) if isinstance(data, dict) else data
                     }
-                    
-                    # Store in the endpoint array
-                    self.collections[root_collection][storage_key]["items"].append(structured_item)
+                    self.collections[root_collection][endpoint_key]["items"].append(new_item)
                     self.save_all_collections()
-                    return jsonify(structured_item), 201
+                    return jsonify(new_item), 201
                     
-            elif request.method == 'PUT':
-                # PUT replaces the entire endpoint data
-                data = request.get_json(force=True)
-                if not data:
-                    return jsonify({"error": "JSON data required"}), 400
+                elif request.method == 'PATCH':
+                    # Partially update specific item by ID
+                    data = request.get_json(force=True)
+                    if not data:
+                        return jsonify({"error": "JSON data required"}), 400
+                        
+                    if endpoint_key not in self.collections[root_collection]:
+                        return jsonify({"error": "Endpoint not found"}), 404
+                        
+                    # Find and partially update the item
+                    items = self.collections[root_collection][endpoint_key].get("items", [])
+                    for i, item in enumerate(items):
+                        if str(item.get("id")) == str(item_id):
+                            # Partially update the item
+                            item["updatedAt"] = current_time
+                            if "data" in data:
+                                # Update data fields
+                                item_data = item.get("data", {})
+                                item_data.update(data["data"])
+                                item["data"] = item_data
+                            else:
+                                # Update other fields directly
+                                item.update(data)
+                            self.collections[root_collection][endpoint_key]["items"][i] = item
+                            self.save_all_collections()
+                            return jsonify(item)
+                            
+                    return jsonify({"error": "Item not found"}), 404
                     
-                # Replace the entire endpoint data
-                self.collections[root_collection][storage_key] = data
-                self.save_all_collections()
-                return jsonify(data)
+                elif request.method == 'DELETE':
+                    # Delete specific item by ID
+                    if endpoint_key not in self.collections[root_collection]:
+                        return jsonify({"error": "Endpoint not found"}), 404
+                        
+                    # Find and delete the item
+                    items = self.collections[root_collection][endpoint_key].get("items", [])
+                    for i, item in enumerate(items):
+                        if str(item.get("id")) == str(item_id):
+                            deleted_item = items.pop(i)
+                            self.save_all_collections()
+                            return jsonify({"message": "Item deleted", "deleted_item": deleted_item})
+                            
+                    return jsonify({"error": "Item not found"}), 404
+                    
+            else:
+                # Handle endpoint-level operations
+                storage_key = path.replace('/', '-')
                 
-            elif request.method == 'PATCH':
-                # PATCH updates specific items in the endpoint
-                data = request.get_json(force=True)
-                if not data:
-                    return jsonify({"error": "JSON data required"}), 400
-                    
-                # Ensure the endpoint structure exists
-                if storage_key not in self.collections[root_collection]:
-                    self.collections[root_collection][storage_key] = {"items": []}
-                elif "items" not in self.collections[root_collection][storage_key]:
-                    self.collections[root_collection][storage_key] = {"items": []}
-                    
-                # Update items if provided
-                if "items" in data:
-                    # Update existing items or add new ones
-                    for updated_item in data["items"]:
-                        item_id = updated_item.get("id")
-                        if item_id:
-                            # Find existing item and update it
-                            found = False
-                            for i, existing_item in enumerate(self.collections[root_collection][storage_key]["items"]):
-                                if existing_item.get("id") == item_id:
-                                    # Update the item
-                                    updated_item["updatedAt"] = current_time
-                                    self.collections[root_collection][storage_key]["items"][i] = updated_item
-                                    found = True
-                                    break
-                            # If not found, add as new item
-                            if not found:
-                                updated_item.setdefault("createdAt", current_time)
-                                updated_item.setdefault("updatedAt", current_time)
-                                self.collections[root_collection][storage_key]["items"].append(updated_item)
+                if request.method == 'GET':
+                    # Return all items under this endpoint
+                    if storage_key in self.collections[root_collection]:
+                        return jsonify(self.collections[root_collection][storage_key])
+                    else:
+                        return jsonify({"items": []})
+                
+                elif request.method == 'POST':
+                    data = request.get_json(force=True)
+                    if not data:
+                        return jsonify({"error": "JSON data required"}), 400
+                        
+                    # Ensure the endpoint structure exists
+                    if storage_key not in self.collections[root_collection]:
+                        self.collections[root_collection][storage_key] = {"items": []}
+                    elif "items" not in self.collections[root_collection][storage_key]:
+                        self.collections[root_collection][storage_key] = {"items": []}
+                        
+                    # Handle both object and array payloads
+                    if isinstance(data, list):
+                        # If it's an array, process each item
+                        results = []
+                        for item in data:
+                            if isinstance(item, dict):
+                                # Extract ID or generate one
+                                item_id = item.pop('id', str(uuid.uuid4()))
                                 
-                self.save_all_collections()
-                return jsonify(self.collections[root_collection][storage_key])
-                
-            elif request.method == 'DELETE':
-                # DELETE removes the entire endpoint
-                if storage_key in self.collections[root_collection]:
-                    deleted_data = self.collections[root_collection].pop(storage_key)
+                                # Separate metadata from data
+                                item_data = {k: v for k, v in item.items()}
+                                
+                                # Create structured item
+                                structured_item = {
+                                    "id": item_id,
+                                    "createdAt": current_time,
+                                    "updatedAt": current_time,
+                                    "data": item_data
+                                }
+                                
+                                self.collections[root_collection][storage_key]["items"].append(structured_item)
+                                results.append(structured_item)
+                        self.save_all_collections()
+                        return jsonify({"items": results}), 201
+                    else:
+                        # If it's an object, process normally
+                        # Extract ID or generate one
+                        item_id = data.pop('id', str(uuid.uuid4()))
+                        
+                        # Separate metadata from data
+                        item_data = {k: v for k, v in data.items()}
+                        
+                        # Create structured item
+                        structured_item = {
+                            "id": item_id,
+                            "createdAt": current_time,
+                            "updatedAt": current_time,
+                            "data": item_data
+                        }
+                        
+                        # Store in the endpoint array
+                        self.collections[root_collection][storage_key]["items"].append(structured_item)
+                        self.save_all_collections()
+                        return jsonify(structured_item), 201
+                        
+                elif request.method == 'PUT':
+                    # PUT replaces the entire endpoint data
+                    data = request.get_json(force=True)
+                    if not data:
+                        return jsonify({"error": "JSON data required"}), 400
+                        
+                    # Replace the entire endpoint data
+                    self.collections[root_collection][storage_key] = data
                     self.save_all_collections()
-                    return jsonify({"message": "Endpoint deleted", "deleted_data": deleted_data})
-                else:
-                    return jsonify({"message": "Endpoint not found"}), 404
+                    return jsonify(data)
+                    
+                elif request.method == 'PATCH':
+                    # PATCH updates specific items in the endpoint
+                    data = request.get_json(force=True)
+                    if not data:
+                        return jsonify({"error": "JSON data required"}), 400
+                        
+                    # Ensure the endpoint structure exists
+                    if storage_key not in self.collections[root_collection]:
+                        self.collections[root_collection][storage_key] = {"items": []}
+                    elif "items" not in self.collections[root_collection][storage_key]:
+                        self.collections[root_collection][storage_key] = {"items": []}
+                        
+                    # Update items if provided
+                    if "items" in data:
+                        # Update existing items or add new ones
+                        for updated_item in data["items"]:
+                            item_id = updated_item.get("id")
+                            if item_id:
+                                # Find existing item and update it
+                                found = False
+                                for i, existing_item in enumerate(self.collections[root_collection][storage_key]["items"]):
+                                    if existing_item.get("id") == item_id:
+                                        # Update the item
+                                        updated_item["updatedAt"] = current_time
+                                        self.collections[root_collection][storage_key]["items"][i] = updated_item
+                                        found = True
+                                        break
+                                # If not found, add as new item
+                                if not found:
+                                    updated_item.setdefault("createdAt", current_time)
+                                    updated_item.setdefault("updatedAt", current_time)
+                                    self.collections[root_collection][storage_key]["items"].append(updated_item)
+                                    
+                    self.save_all_collections()
+                    return jsonify(self.collections[root_collection][storage_key])
+                    
+                elif request.method == 'DELETE':
+                    # DELETE removes the entire endpoint
+                    if storage_key in self.collections[root_collection]:
+                        deleted_data = self.collections[root_collection].pop(storage_key)
+                        self.save_all_collections()
+                        return jsonify({"message": "Endpoint deleted", "deleted_data": deleted_data})
+                    else:
+                        return jsonify({"message": "Endpoint not found"}), 404
             
     def run(self, host='localhost', debug=False):
         """Run the server"""
