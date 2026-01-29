@@ -621,7 +621,181 @@
         }
       }
 
-      // Render collections
+      // Build tree structure from flat collection list
+      function buildTreeStructure(collections) {
+        const tree = {};
+
+        collections.forEach((collection) => {
+          // Split by hyphens to create hierarchy
+          const parts = collection.split("-");
+          let current = tree;
+
+          parts.forEach((part, index) => {
+            if (!current[part]) {
+              current[part] =
+                index === parts.length - 1
+                  ? {
+                      type: "endpoint",
+                      name: part,
+                      fullPath: collection,
+                      children: {},
+                    }
+                  : {
+                      type: "folder",
+                      name: part,
+                      children: {},
+                    };
+            }
+            current = current[part].children;
+          });
+        });
+
+        return tree;
+      }
+
+      // Render tree node recursively
+      function renderTreeNode(node, depth = 0) {
+        let html = "";
+
+        Object.keys(node)
+          .sort()
+          .forEach((key) => {
+            const item = node[key];
+            const indent = depth * 20;
+
+            if (item.type === "folder") {
+              html += `
+              <div class="tree-item" style="margin-left: ${indent}px;">
+                <div class="folder">
+                  <span class="folder-icon">📁</span>
+                  <span class="folder-name">${item.name}</span>
+                </div>
+              </div>
+            `;
+              html += renderTreeNode(item.children, depth + 1);
+            } else {
+              html += `
+              <div class="tree-item" style="margin-left: ${indent}px;">
+                <div class="collection-card" style="margin-bottom: 10px;">
+                  <div class="collection-header">
+                    <div class="collection-title">${item.name}</div>
+                  </div>
+                  <div class="collection-endpoint">${baseUrl}/${item.fullPath.replace(/-/g, "/")}/</div>
+                  <div class="collection-actions">
+                    <button onclick="viewCollection('${item.fullPath}')">View Data</button>
+                    <button class="btn-danger" onclick="deleteCollection('${item.fullPath}')">Delete</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            }
+          });
+
+        return html;
+      }
+
+      // Group collections by root name to create hierarchical structure
+      function groupCollectionsByRoot(collections) {
+        const grouped = {};
+
+        collections.forEach((collection) => {
+          const parts = collection.split("-");
+          const root = parts[0];
+
+          if (!grouped[root]) {
+            grouped[root] = {
+              name: root,
+              endpoints: [],
+            };
+          }
+
+          // Add as endpoint if it has more than one part
+          if (parts.length > 1) {
+            grouped[root].endpoints.push(collection);
+          }
+        });
+
+        return grouped;
+      }
+
+      // Build hierarchical tree structure from flat collection list
+      function buildTreeStructure(collections) {
+        const tree = {};
+
+        collections.forEach((collection) => {
+          const parts = collection.split("-");
+          const root = parts[0];
+
+          // Initialize root if not exists
+          if (!tree[root]) {
+            tree[root] = {
+              name: root,
+              type: "collection",
+              children: {},
+            };
+          }
+
+          // Build nested structure
+          let current = tree[root].children;
+          for (let i = 1; i < parts.length; i++) {
+            const part = parts[i];
+            if (!current[part]) {
+              current[part] = {
+                name: part,
+                type: i === parts.length - 1 ? "endpoint" : "folder",
+                fullPath: parts.slice(0, i + 1).join("-"),
+                children: {},
+              };
+            }
+            current = current[part].children;
+          }
+        });
+
+        return tree;
+      }
+
+      // Render tree node recursively
+      function renderTreeNode(node, depth = 0, rootName = "") {
+        let html = "";
+        const indent = depth * 20;
+
+        Object.keys(node)
+          .sort()
+          .forEach((key) => {
+            const item = node[key];
+
+            if (item.type === "folder") {
+              // Folder node
+              html += `
+              <div class="tree-item" style="margin-left: ${indent}px; margin: 8px 0;">
+                <div style="display: flex; align-items: center; padding: 8px; background: var(--bg-light); border-radius: 4px;">
+                  <span style="margin-right: 8px;">📁</span>
+                  <span style="font-weight: 500;">${item.name}</span>
+                </div>
+              </div>
+            `;
+              html += renderTreeNode(item.children, depth + 1, rootName);
+            } else if (item.type === "endpoint") {
+              // Endpoint node
+              const endpointPath = item.fullPath.replace(/-/g, "/");
+              html += `
+              <div class="tree-item" style="margin-left: ${indent}px; margin: 8px 0;">
+                <div style="padding: 8px; background: var(--bg-darker); border-radius: 4px; border-left: 3px solid var(--accent);">
+                  <div style="font-weight: 500; margin-bottom: 5px;">${item.name}</div>
+                  <div class="collection-endpoint">${baseUrl}/${endpointPath}/</div>
+                  <div style="margin-top: 8px;">
+                    <button onclick="viewCollection('${item.fullPath}')" style="padding: 4px 8px; font-size: 0.8rem;">View Data</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            }
+          });
+
+        return html;
+      }
+
+      // Render collections as hierarchical tree
       function renderCollections() {
         if (collections.length === 0) {
           collectionsContainer.innerHTML =
@@ -629,22 +803,35 @@
           return;
         }
 
+        const tree = buildTreeStructure(collections);
         let html = '<div class="collections-grid">';
 
-        collections.forEach((collection) => {
-          html += `
+        Object.keys(tree)
+          .sort()
+          .forEach((rootKey) => {
+            const collection = tree[rootKey];
+            html += `
             <div class="collection-card">
               <div class="collection-header">
-                <div class="collection-title">${collection}</div>
+                <div class="collection-title">${collection.name}</div>
               </div>
-              <div class="collection-endpoint">${baseUrl}/${collection}/</div>
+              <div class="collection-endpoint">${baseUrl}/${collection.name}/</div>
               <div class="collection-actions">
-                <button onclick="viewCollection('${collection}')">View Data</button>
-                <button class="btn-danger" onclick="deleteCollection('${collection}')">Delete</button>
+                <button onclick="viewCollection('${collection.name}')">View Data</button>
+                <button class="btn-danger" onclick="deleteCollection('${collection.name}')">Delete</button>
               </div>
+              
+              ${
+                Object.keys(collection.children).length > 0
+                  ? `<div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+                  <h4 style="margin: 5px 0; color: var(--fg-muted);">Hierarchy:</h4>
+                  ${renderTreeNode(collection.children, 0, collection.name)}
+                </div>`
+                  : ""
+              }
             </div>
           `;
-        });
+          });
 
         html += "</div>";
         collectionsContainer.innerHTML = html;

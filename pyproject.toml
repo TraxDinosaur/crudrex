@@ -1,6 +1,6 @@
 [project]
 name = "crudrex"
-version = "0.1.0"
+version = "0.1.1"
 description = "A modern mock JSON server for testing HTTP requests and learning CRUD operations, similar to mockapi.io or crudcrud.com."
 readme = "README.md"
 requires-python = ">=3.14"
