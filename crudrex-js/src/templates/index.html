@@ -559,6 +559,7 @@
           CRUDREX - Mock JSON Server | Similar to mockapi.io and crudcrud.com
         </p>
         <p>Data is automatically persisted in JSON files</p>
+        <p style="margin-top: 10px; color: var(--accent);">JavaScript/Node.js Version</p>
       </div>
     </footer>
 
@@ -622,103 +623,6 @@
       }
 
       // Build tree structure from flat collection list
-      function buildTreeStructure(collections) {
-        const tree = {};
-
-        collections.forEach((collection) => {
-          // Split by hyphens to create hierarchy
-          const parts = collection.split("-");
-          let current = tree;
-
-          parts.forEach((part, index) => {
-            if (!current[part]) {
-              current[part] =
-                index === parts.length - 1
-                  ? {
-                      type: "endpoint",
-                      name: part,
-                      fullPath: collection,
-                      children: {},
-                    }
-                  : {
-                      type: "folder",
-                      name: part,
-                      children: {},
-                    };
-            }
-            current = current[part].children;
-          });
-        });
-
-        return tree;
-      }
-
-      // Render tree node recursively
-      function renderTreeNode(node, depth = 0) {
-        let html = "";
-
-        Object.keys(node)
-          .sort()
-          .forEach((key) => {
-            const item = node[key];
-            const indent = depth * 20;
-
-            if (item.type === "folder") {
-              html += `
-              <div class="tree-item" style="margin-left: ${indent}px;">
-                <div class="folder">
-                  <span class="folder-icon">📁</span>
-                  <span class="folder-name">${item.name}</span>
-                </div>
-              </div>
-            `;
-              html += renderTreeNode(item.children, depth + 1);
-            } else {
-              html += `
-              <div class="tree-item" style="margin-left: ${indent}px;">
-                <div class="collection-card" style="margin-bottom: 10px;">
-                  <div class="collection-header">
-                    <div class="collection-title">${item.name}</div>
-                  </div>
-                  <div class="collection-endpoint">${baseUrl}/${item.fullPath.replace(/-/g, "/")}/</div>
-                  <div class="collection-actions">
-                    <button onclick="viewCollection('${item.fullPath}')">View Data</button>
-                    <button class="btn-danger" onclick="deleteCollection('${item.fullPath}')">Delete</button>
-                  </div>
-                </div>
-              </div>
-            `;
-            }
-          });
-
-        return html;
-      }
-
-      // Group collections by root name to create hierarchical structure
-      function groupCollectionsByRoot(collections) {
-        const grouped = {};
-
-        collections.forEach((collection) => {
-          const parts = collection.split("-");
-          const root = parts[0];
-
-          if (!grouped[root]) {
-            grouped[root] = {
-              name: root,
-              endpoints: [],
-            };
-          }
-
-          // Add as endpoint if it has more than one part
-          if (parts.length > 1) {
-            grouped[root].endpoints.push(collection);
-          }
-        });
-
-        return grouped;
-      }
-
-      // Build hierarchical tree structure from flat collection list
       function buildTreeStructure(collections) {
         const tree = {};
 

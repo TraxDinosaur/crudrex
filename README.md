@@ -1,210 +1,211 @@
 # CRUDREX - Mock JSON Server
 
-A modern mock JSON server for testing HTTP requests and learning CRUD operations, similar to mockapi.io or crudcrud.com.
+A modern mock JSON server for testing HTTP requests and learning CRUD operations - **Available in Python and JavaScript!**
 
-## Features
+> CRUDREX helps you quickly set up a mock REST API server for testing your applications, learning CRUD operations, or prototyping without needing a real backend.
+
+## 🚀 Quick Start - Choose Your Version
+
+### 🐍 Python Version (Original)
+
+[![PyPI](https://img.shields.io/badge/Python-3.14+-blue.svg)](https://pypi.org/project/crudrex)
+
+```bash
+cd crudrex-py
+pip install -e .
+crudrex
+```
+
+#### Installation
+
+```bash
+cd crudrex-py
+pip install -r requirements.txt
+```
+
+#### Run Server
+
+```bash
+python crudrex/cli/cli.py
+# or
+crudrex
+```
+
+### 💻 JavaScript/Node.js Version
+
+[![Node.js](https://img.shields.io/badge/Node.js-14+-green.svg)](https://nodejs.org)
+
+```bash
+cd crudrex-js
+npm install
+npm start
+```
+
+#### Installation
+
+```bash
+cd crudrex-js
+npm install
+```
+
+#### Run Server
+
+```bash
+npm start
+# or
+node src/cli.js
+```
+
+## ✨ Features (Both Versions)
 
 - 🚀 **Create collections dynamically** on-the-fly
 - 🔄 **Full CRUD operations** (GET, POST, PUT, PATCH, DELETE)
 - 💾 **Automatic data persistence** in JSON files
 - 🌐 **CORS enabled** for cross-origin requests
-- 🖥️ **Beautiful web interface** with Hyde/Hyprland-inspired design
+- 🖥️ **Beautiful web interface** with modern design
 - ⌨️ **CLI interface** for easy server management
 - 📱 **Responsive design** that works on all devices
 
-## Installation
+## 📚 Documentation
 
-### Prerequisites
+- **Python Version**: See [`crudrex-py/README.md`](crudrex-py/README.md) for detailed documentation
+- **JavaScript Version**: See [`crudrex-js/README.md`](crudrex-js/README.md) for detailed documentation
 
-- Python 3.7 or higher
-- pip (Python package installer)
-
-### Required Dependencies
-
-Install dependencies using pip:
-
-```bash
-pip install flask flask-cors
-```
-
-Or install from requirements.txt:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Quick Start
-
-1. Clone the repository:
-
-   ```bash
-   git clone <repository-url>
-   cd crudrex
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Start the server:
-
-   ```bash
-   python crudrex/cli/cli.py
-   ```
-
-4. Visit `http://localhost:8085` in your browser to access the web interface.
-
-## Global Installation
-
-To use CRUDREX from anywhere on your system:
-
-1. Add the CRUDREX directory to your system PATH:
-   - **Windows**: Add the full path to the crudrex folder to your PATH environment variable
-   - **Linux/macOS**: Add `export PATH="$PATH:/path/to/crudrex"` to your shell profile (~/.bashrc, ~/.zshrc, etc.)
-
-2. Create a script file in the CRUDREX directory according to your system:
-   - **Windows**: Create `crudrex.bat` with content: `@echo off` and `python "YOUR_PATH\crudrex\cli\cli.py" %*`
-   - **Linux/macOS**: Create `crudrex` shell script with content: `#!/bin/bash` and `python3 "$(dirname "$0")/crudrex/cli/cli.py" "$@"`
-
-3. Make the script executable (Linux/macOS only):
-
-   ```bash
-   chmod +x crudrex
-   ```
-
-4. Use CRUDREX from anywhere:
-   ```bash
-   crudrex
-   crudrex --port 3000
-   ```
-
-## Usage
-
-### Starting the Server
-
-Start the server with default settings:
-
-```bash
-python crudrex/cli/cli.py
-```
-
-Customize the port and data directory:
-
-```bash
-python crudrex/cli/cli.py --port 3000 --data-dir ./my-data
-```
-
-### Creating Collections
-
-#### Via Web Interface
-
-1. Visit `http://localhost:8085`
-2. Enter a collection name in the "Create New Collection" form
-3. Click "Create Collection"
-
-#### Via API
-
-```bash
-curl -X POST http://localhost:8085/collections/ -H "Content-Type: application/json" -d '{"name": "users"}'
-```
-
-### Working with Data
-
-Once you have a collection, you can perform CRUD operations:
-
-#### Create (POST)
-
-```bash
-curl -X POST http://localhost:8085/users/ -H "Content-Type: application/json" -d '{"name": "John Doe", "email": "john@example.com"}'
-```
-
-#### Read (GET)
-
-```bash
-# Get all items
-curl http://localhost:8085/users/
-
-# Get a specific item
-curl http://localhost:8085/users/{item-id}
-
-# Filter items
-curl http://localhost:8085/users/?name=John
-```
-
-#### Update (PUT)
-
-```bash
-curl -X PUT http://localhost:8085/users/{item-id} -H "Content-Type: application/json" -d '{"name": "Jane Doe", "email": "jane@example.com"}'
-```
-
-#### Partial Update (PATCH)
-
-```bash
-curl -X PATCH http://localhost:8085/users/{item-id} -H "Content-Type: application/json" -d '{"name": "Jane Smith"}'
-```
-
-#### Delete (DELETE)
-
-```bash
-curl -X DELETE http://localhost:8085/users/{item-id}
-```
-
-## Web Interface
-
-Visit `http://localhost:8085/` in your browser to access the modern web interface featuring:
-
-- Collection management dashboard
-- Real-time data visualization
-- JSON data preview
-- API endpoint reference
-- Responsive design for all devices
-
-## Data Storage
-
-Data is automatically persisted in JSON files in the data directory (default: `./data`).
-
-Each collection is stored in a separate JSON file named `{collection-name}.json`.
-
-## Requirements
-
-- Python 3.7+
-- Flask >= 2.0.0
-- Flask-CORS >= 3.0.0
-
-## Project Structure
+## 🗂️ Project Structure
 
 ```
 crudrex/
-├── cli/           # Command line interface
-├── api/           # Core server implementation
-│   └── templates/ # Web interface templates
-└── data/          # Data storage directory
+├── crudrex-py/          # Python version (Flask)
+│   ├── crudrex/         # Main package
+│   │   ├── api/         # API server
+│   │   └── cli/         # CLI interface
+│   ├── demo.py          # Demo script
+│   ├── README.md        # Python docs
+│   └── pyproject.toml   # Python config
+│
+├── crudrex-js/          # JavaScript version (Node.js)
+│   ├── src/             # Source code
+│   │   ├── cli.js       # CLI interface
+│   │   └── server.js    # API server
+│   ├── data/            # JSON data storage
+│   ├── README.md        # JavaScript docs
+│   └── package.json     # Node.js config
+│
+├── LICENSE              # MIT License
+└── README.md            # This file
 ```
 
-## API Endpoints
+## 🤔 Which Version Should I Use?
 
-| Method | Endpoint           | Description                 |
-| ------ | ------------------ | --------------------------- |
-| GET    | `/collections/`    | List all collections        |
-| POST   | `/collections/`    | Create a new collection     |
-| GET    | `/:collection/`    | Get all items in collection |
-| POST   | `/:collection/`    | Create a new item           |
-| GET    | `/:collection/:id` | Get a specific item         |
-| PUT    | `/:collection/:id` | Update an item (full)       |
-| PATCH  | `/:collection/:id` | Update an item (partial)    |
-| DELETE | `/:collection/:id` | Delete an item              |
+| Feature      | Python Version           | JavaScript Version            |
+| ------------ | ------------------------ | ----------------------------- |
+| Best For     | Python developers        | Node.js/JavaScript developers |
+| Framework    | Flask                    | Express.js                    |
+| Dependencies | Lightweight              | npm ecosystem                 |
+| Performance  | Fast for Python apps     | Better for JavaScript apps    |
+| Learning     | Understanding Python web | Understanding Node.js web     |
 
-## Author
+## 🔧 Configuration
+
+Both versions support custom configuration:
+
+- **Port**: Default 3000
+- **Data Directory**: Auto-created for JSON storage
+- **CORS**: Enabled by default
+
+## 📝 Usage Examples
+
+### Create a Collection
+
+```bash
+# POST request to create a new collection
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name": "John Doe", "email": "john@example.com"}'
+```
+
+### Read Data
+
+```bash
+# GET all users
+curl http://localhost:3000/api/users
+
+# GET specific user
+curl http://localhost:3000/api/users/1
+```
+
+### Update Data
+
+```bash
+# PUT (replace)
+curl -X PUT http://localhost:3000/api/users/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Jane Doe", "email": "jane@example.com"}'
+
+# PATCH (partial update)
+curl -X PATCH http://localhost:3000/api/users/1 \
+  -H "Content-Type: application/json" \
+  -d '{"email": "jane.new@example.com"}'
+```
+
+### Delete Data
+
+```bash
+curl -X DELETE http://localhost:3000/api/users/1
+```
+
+## 🌐 Web Interface
+
+Both versions come with a beautiful web interface available at:
+
+```
+http://localhost:3000
+```
+
+The interface allows you to:
+
+- View all collections and their data
+- Add, edit, and delete records
+- Test API endpoints interactively
+- Monitor request/response logs
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Setup
+
+**Python Version:**
+
+```bash
+cd crudrex-py
+pip install -e .
+```
+
+**JavaScript Version:**
+
+```bash
+cd crudrex-js
+npm install
+npm run dev
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Author
 
 **TraxDinosaur**
 
 - GitHub: [@TraxDinosaur](https://github.com/TraxDinosaur)
-- Email: acciotraxdinosaur@duck.com
+- Original Python Version & JavaScript Port
 
-## License
+## 🙏 Acknowledgments
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- Inspired by [mockapi.io](https://mockapi.io) and [crudcrud.com](https://crudcrud.com)
+- Web interface design inspired by Hyde/Hyprland aesthetics
 
-For complete documentation, see [DOCUMENTATION.md](DOCUMENTATION.md).
+---
+
+**Note**: Both versions (Python and JavaScript) offer identical functionality from a user's perspective. Choose the one that best fits your development environment and preferences.
