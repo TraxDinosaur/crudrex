@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRUDREX - Mock JSON Server</title>
+    <style>
+      :root {
+        /* Hyprland/Hyde inspired color scheme */
+        --bg-dark: #1e1e2e;
+        --bg-darker: #181825;
+        --bg-light: #313244;
+        --fg: #cdd6f4;
+        --fg-muted: #a6adc8;
+        --accent: #cba6f7;
+        --accent-alt: #89b4fa;
+        --success: #a6e3a1;
+        --warning: #f9e2af;
+        --error: #f38ba8;
+        --border: #45475a;
+        --card-bg: #11111b;
+        --modal-bg: rgba(30, 30, 46, 0.95);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Fira Code", "JetBrains Mono", "Monaco", monospace;
+        line-height: 1.6;
+        color: var(--fg);
+        background-color: var(--bg-dark);
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      header {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+        color: var(--fg-muted);
+      }
+
+      .card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      h2 {
+        color: var(--accent-alt);
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 1.5rem;
+        font-weight: 500;
+      }
+
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--fg);
+        font-size: 0.9rem;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 0.75rem;
+        background-color: var(--bg-light);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--fg);
+        font-family: inherit;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(203, 166, 247, 0.3);
+      }
+
+      button {
+        background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+        color: var(--bg-darker);
+        border: none;
+        padding: 0.75rem 1.25rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(203, 166, 247, 0.3);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, var(--error), #eba0ac);
+        color: var(--bg-darker);
+      }
+
+      .btn-danger:hover {
+        box-shadow: 0 4px 10px rgba(243, 139, 168, 0.3);
+      }
+
+      .collections-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+        margin-top: 1rem;
+      }
+
+      .collection-card {
+        background-color: var(--bg-light);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+      }
+
+      .collection-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+      }
+
+      .collection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .collection-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--accent);
+      }
+
+      .collection-endpoint {
+        background-color: var(--bg-darker);
+        padding: 0.5rem;
+        border-radius: 6px;
+        font-family: "Fira Code", monospace;
+        font-size: 0.8rem;
+        margin: 0.5rem 0;
+        word-break: break-all;
+        color: var(--fg-muted);
+        border: 1px solid var(--border);
+      }
+
+      .collection-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+      }
+
+      .data-table th,
+      .data-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .data-table th {
+        background-color: var(--bg-light);
+        font-weight: 600;
+        color: var(--fg);
+      }
+
+      .data-table tr:hover {
+        background-color: rgba(203, 166, 247, 0.1);
+      }
+
+      .notification {
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        display: none;
+        font-size: 0.9rem;
+        border: 1px solid;
+      }
+
+      .notification.success {
+        background-color: rgba(166, 227, 161, 0.15);
+        border-color: var(--success);
+        color: var(--success);
+      }
+
+      .notification.error {
+        background-color: rgba(243, 139, 168, 0.15);
+        border-color: var(--error);
+        color: var(--error);
+      }
+
+      .endpoint-section {
+        margin: 1.5rem 0;
+        padding: 1.25rem;
+        background-color: var(--bg-light);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+
+      .endpoint-title {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+        color: var(--fg);
+        display: flex;
+        align-items: center;
+      }
+
+      .endpoint-method {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: bold;
+        margin-right: 0.75rem;
+        font-size: 0.8rem;
+        min-width: 60px;
+        text-align: center;
+      }
+
+      .method-get {
+        background: rgba(137, 180, 250, 0.2);
+        color: var(--accent-alt);
+        border: 1px solid var(--accent-alt);
+      }
+      .method-post {
+        background: rgba(166, 227, 161, 0.2);
+        color: var(--success);
+        border: 1px solid var(--success);
+      }
+      .method-put {
+        background: rgba(249, 226, 175, 0.2);
+        color: var(--warning);
+        border: 1px solid var(--warning);
+      }
+      .method-patch {
+        background: rgba(203, 166, 247, 0.2);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+      }
+      .method-delete {
+        background: rgba(243, 139, 168, 0.2);
+        color: var(--error);
+        border: 1px solid var(--error);
+      }
+
+      footer {
+        text-align: center;
+        padding: 1.5rem 0;
+        color: var(--fg-muted);
+        margin-top: 1.5rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.9rem;
+      }
+
+      /* Modal styles */
+      #collection-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--modal-bg);
+        backdrop-filter: blur(10px);
+        z-index: 1000;
+        overflow-y: auto;
+      }
+
+      #collection-modal .card {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-width: 90%;
+        width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .collections-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .header-content {
+          flex-direction: column;
+          text-align: center;
+          gap: 1rem;
+        }
+
+        h1 {
+          font-size: 1.75rem;
+        }
+
+        .collection-actions {
+          flex-direction: column;
+        }
+
+        #collection-modal .card {
+          width: 95%;
+        }
+      }
+
+      /* Terminal-like styling for JSON preview */
+      .json-preview {
+        background-color: var(--bg-darker);
+        color: var(--fg);
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: "Fira Code", monospace;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        font-size: 0.9rem;
+      }
+
+      /* Loading animation */
+      @keyframes pulse {
+        0% {
+          opacity: 0.6;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.6;
+        }
+      }
+
+      .loading {
+        animation: pulse 1.5s infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-content">
+          <div>
+            <h1>CRUDREX</h1>
+            <p class="subtitle">Mock JSON Server for Testing HTTP Requests</p>
+          </div>
+          <div>
+            <p>
+              Server running on port:
+              <span id="server-port" style="color: var(--accent)">8085</span>
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <div class="container">
+        <!-- Notifications -->
+        <div id="notification" class="notification"></div>
+
+        <!-- Create Collection Section -->
+        <div class="card">
+          <h2>Create New Collection</h2>
+          <form id="create-collection-form">
+            <div class="form-group">
+              <label for="collection-name">Collection Name</label>
+              <input
+                type="text"
+                id="collection-name"
+                placeholder="Enter collection name (e.g., users, products)"
+                required
+              />
+            </div>
+            <button type="submit">Create Collection</button>
+          </form>
+        </div>
+
+        <!-- Collections Section -->
+        <div class="card">
+          <h2>Your Collections</h2>
+          <div id="collections-container">
+            <p class="loading">Loading collections...</p>
+          </div>
+        </div>
+
+        <!-- API Endpoints Reference -->
+        <div class="card">
+          <h2>API Endpoints Reference</h2>
+
+          <div class="endpoint-section">
+            <div class="endpoint-title">
+              <span class="endpoint-method method-get">GET</span>
+              List all collections
+            </div>
+            <div class="collection-endpoint">GET /collections/</div>
+          </div>
+
+          <div class="endpoint-section">
+            <div class="endpoint-title">
+              <span class="endpoint-method method-post">POST</span>
+              Create a new collection
+            </div>
+            <div class="collection-endpoint">POST /collections/</div>
+            <div class="collection-endpoint">
+              Body: {"name": "collection_name"}
+            </div>
+          </div>
+
+          <div class="endpoint-section">
+            <div class="endpoint-title">
+              <span class="endpoint-method method-get">GET</span>
+              Get all items in a collection
+            </div>
+            <div class="collection-endpoint">GET /:collection_name/</div>
+          </div>
+
+          <div class="endpoint-section">
+            <div class="endpoint-title">
+              <span class="endpoint-method method-post">POST</span>
+              Create a new item
+            </div>
+            <div class="collection-endpoint">POST /:collection_name/</div>
+            <div class="collection-endpoint">Body: {"field": "value"}</div>
+          </div>
+
+          <div class="endpoint-section">
+            <div class="endpoint-title">
+              <span class="endpoint-method method-get">GET</span>
+              Get a specific item
+            </div>
+            <div class="collection-endpoint">GET /:collection_name/:id</div>
+          </div>
+
+          <div class="endpoint-section">
+            <div class="endpoint-title">
+              <span class="endpoint-method method-put">PUT</span>
+              Update an item (full replacement)
+            </div>
+            <div class="collection-endpoint">PUT /:collection_name/:id</div>
+            <div class="collection-endpoint">Body: {"field": "new_value"}</div>
+          </div>
+
+          <div class="endpoint-section">
+            <div class="endpoint-title">
+              <span class="endpoint-method method-patch">PATCH</span>
+              Partially update an item
+            </div>
+            <div class="collection-endpoint">PATCH /:collection_name/:id</div>
+            <div class="collection-endpoint">
+              Body: {"field": "updated_value"}
+            </div>
+          </div>
+
+          <div class="endpoint-section">
+            <div class="endpoint-title">
+              <span class="endpoint-method method-delete">DELETE</span>
+              Delete an item
+            </div>
+            <div class="collection-endpoint">DELETE /:collection_name/:id</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collection Modal -->
+    <div id="collection-modal">
+      <div class="card">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+          "
+        >
+          <h2 id="modal-title">Collection Details</h2>
+          <button
+            onclick="closeModal()"
+            style="
+              background: none;
+              color: var(--fg);
+              font-size: 1.5rem;
+              border: none;
+              cursor: pointer;
+            "
+          >
+            &times;
+          </button>
+        </div>
+        <div id="collection-details"></div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <p>
+          CRUDREX - Mock JSON Server | Similar to mockapi.io and crudcrud.com
+        </p>
+        <p>Data is automatically persisted in JSON files</p>
+      </div>
+    </footer>
+
+    <script>
+      // Global variables
+      const baseUrl = window.location.origin;
+      let collections = [];
+
+      // DOM Elements
+      const notificationEl = document.getElementById("notification");
+      const collectionsContainer = document.getElementById(
+        "collections-container",
+      );
+      const createCollectionForm = document.getElementById(
+        "create-collection-form",
+      );
+      const collectionNameInput = document.getElementById("collection-name");
+      const serverPortEl = document.getElementById("server-port");
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        serverPortEl.textContent = window.location.port || "80";
+        loadCollections();
+
+        // Form submission
+        createCollectionForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          createCollection();
+        });
+      });
+
+      // Show notification
+      function showNotification(message, isSuccess = true) {
+        notificationEl.textContent = message;
+        notificationEl.className =
+          "notification " + (isSuccess ? "success" : "error");
+        notificationEl.style.display = "block";
+
+        setTimeout(() => {
+          notificationEl.style.display = "none";
+        }, 5000);
+      }
+
+      // Load collections
+      async function loadCollections() {
+        try {
+          const response = await fetch("/collections/");
+          if (response.ok) {
+            const data = await response.json();
+            collections = data.collections || [];
+            renderCollections();
+          } else {
+            collectionsContainer.innerHTML =
+              "<p style='color: var(--error);'>Failed to load collections. Please refresh the page.</p>";
+          }
+        } catch (error) {
+          console.error("Error loading collections:", error);
+          collectionsContainer.innerHTML =
+            "<p style='color: var(--error);'>Error loading collections. Please check your connection.</p>";
+        }
+      }
+
+      // Build tree structure from flat collection list
+      function buildTreeStructure(collections) {
+        const tree = {};
+
+        collections.forEach((collection) => {
+          // Split by hyphens to create hierarchy
+          const parts = collection.split("-");
+          let current = tree;
+
+          parts.forEach((part, index) => {
+            if (!current[part]) {
+              current[part] =
+                index === parts.length - 1
+                  ? {
+                      type: "endpoint",
+                      name: part,
+                      fullPath: collection,
+                      children: {},
+                    }
+                  : {
+                      type: "folder",
+                      name: part,
+                      children: {},
+                    };
+            }
+            current = current[part].children;
+          });
+        });
+
+        return tree;
+      }
+
+      // Render tree node recursively
+      function renderTreeNode(node, depth = 0) {
+        let html = "";
+
+        Object.keys(node)
+          .sort()
+          .forEach((key) => {
+            const item = node[key];
+            const indent = depth * 20;
+
+            if (item.type === "folder") {
+              html += `
+              <div class="tree-item" style="margin-left: ${indent}px;">
+                <div class="folder">
+                  <span class="folder-icon">📁</span>
+                  <span class="folder-name">${item.name}</span>
+                </div>
+              </div>
+            `;
+              html += renderTreeNode(item.children, depth + 1);
+            } else {
+              html += `
+              <div class="tree-item" style="margin-left: ${indent}px;">
+                <div class="collection-card" style="margin-bottom: 10px;">
+                  <div class="collection-header">
+                    <div class="collection-title">${item.name}</div>
+                  </div>
+                  <div class="collection-endpoint">${baseUrl}/${item.fullPath.replace(/-/g, "/")}/</div>
+                  <div class="collection-actions">
+                    <button onclick="viewCollection('${item.fullPath}')">View Data</button>
+                    <button class="btn-danger" onclick="deleteCollection('${item.fullPath}')">Delete</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            }
+          });
+
+        return html;
+      }
+
+      // Group collections by root name to create hierarchical structure
+      function groupCollectionsByRoot(collections) {
+        const grouped = {};
+
+        collections.forEach((collection) => {
+          const parts = collection.split("-");
+          const root = parts[0];
+
+          if (!grouped[root]) {
+            grouped[root] = {
+              name: root,
+              endpoints: [],
+            };
+          }
+
+          // Add as endpoint if it has more than one part
+          if (parts.length > 1) {
+            grouped[root].endpoints.push(collection);
+          }
+        });
+
+        return grouped;
+      }
+
+      // Build hierarchical tree structure from flat collection list
+      function buildTreeStructure(collections) {
+        const tree = {};
+
+        collections.forEach((collection) => {
+          const parts = collection.split("-");
+          const root = parts[0];
+
+          // Initialize root if not exists
+          if (!tree[root]) {
+            tree[root] = {
+              name: root,
+              type: "collection",
+              children: {},
+            };
+          }
+
+          // Build nested structure
+          let current = tree[root].children;
+          for (let i = 1; i < parts.length; i++) {
+            const part = parts[i];
+            if (!current[part]) {
+              current[part] = {
+                name: part,
+                type: i === parts.length - 1 ? "endpoint" : "folder",
+                fullPath: parts.slice(0, i + 1).join("-"),
+                children: {},
+              };
+            }
+            current = current[part].children;
+          }
+        });
+
+        return tree;
+      }
+
+      // Render tree node recursively
+      function renderTreeNode(node, depth = 0, rootName = "") {
+        let html = "";
+        const indent = depth * 20;
+
+        Object.keys(node)
+          .sort()
+          .forEach((key) => {
+            const item = node[key];
+
+            if (item.type === "folder") {
+              // Folder node
+              html += `
+              <div class="tree-item" style="margin-left: ${indent}px; margin: 8px 0;">
+                <div style="display: flex; align-items: center; padding: 8px; background: var(--bg-light); border-radius: 4px;">
+                  <span style="margin-right: 8px;">📁</span>
+                  <span style="font-weight: 500;">${item.name}</span>
+                </div>
+              </div>
+            `;
+              html += renderTreeNode(item.children, depth + 1, rootName);
+            } else if (item.type === "endpoint") {
+              // Endpoint node
+              const endpointPath = item.fullPath.replace(/-/g, "/");
+              html += `
+              <div class="tree-item" style="margin-left: ${indent}px; margin: 8px 0;">
+                <div style="padding: 8px; background: var(--bg-darker); border-radius: 4px; border-left: 3px solid var(--accent);">
+                  <div style="font-weight: 500; margin-bottom: 5px;">${item.name}</div>
+                  <div class="collection-endpoint">${baseUrl}/${endpointPath}/</div>
+                  <div style="margin-top: 8px;">
+                    <button onclick="viewCollection('${item.fullPath}')" style="padding: 4px 8px; font-size: 0.8rem;">View Data</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            }
+          });
+
+        return html;
+      }
+
+      // Render collections as hierarchical tree
+      function renderCollections() {
+        if (collections.length === 0) {
+          collectionsContainer.innerHTML =
+            "<p>No collections yet. Create your first collection above!</p>";
+          return;
+        }
+
+        const tree = buildTreeStructure(collections);
+        let html = '<div class="collections-grid">';
+
+        Object.keys(tree)
+          .sort()
+          .forEach((rootKey) => {
+            const collection = tree[rootKey];
+            html += `
+            <div class="collection-card">
+              <div class="collection-header">
+                <div class="collection-title">${collection.name}</div>
+              </div>
+              <div class="collection-endpoint">${baseUrl}/${collection.name}/</div>
+              <div class="collection-actions">
+                <button onclick="viewCollection('${collection.name}')">View Data</button>
+                <button class="btn-danger" onclick="deleteCollection('${collection.name}')">Delete</button>
+              </div>
+              
+              ${
+                Object.keys(collection.children).length > 0
+                  ? `<div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+                  <h4 style="margin: 5px 0; color: var(--fg-muted);">Hierarchy:</h4>
+                  ${renderTreeNode(collection.children, 0, collection.name)}
+                </div>`
+                  : ""
+              }
+            </div>
+          `;
+          });
+
+        html += "</div>";
+        collectionsContainer.innerHTML = html;
+      }
+
+      // Create collection
+      async function createCollection() {
+        const name = collectionNameInput.value.trim();
+
+        if (!name) {
+          showNotification("Please enter a collection name", false);
+          return;
+        }
+
+        try {
+          const response = await fetch("/collections/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name: name }),
+          });
+
+          if (response.ok) {
+            showNotification(`Collection "${name}" created successfully!`);
+            collectionNameInput.value = "";
+            loadCollections();
+          } else {
+            const error = await response.json();
+            showNotification(
+              error.error || "Failed to create collection",
+              false,
+            );
+          }
+        } catch (error) {
+          console.error("Error creating collection:", error);
+          showNotification(
+            "Error creating collection. Please try again.",
+            false,
+          );
+        }
+      }
+
+      // View collection data
+      async function viewCollection(collectionName) {
+        try {
+          const response = await fetch(`/${collectionName}/`);
+          let data = [];
+
+          if (response.ok) {
+            data = await response.json();
+          }
+
+          let html = `
+            <h3>${collectionName} Data</h3>
+            <div class="collection-endpoint">${baseUrl}/${collectionName}/</div>
+          `;
+
+          if (data.length === 0) {
+            html += "<p>No data in this collection yet.</p>";
+          } else {
+            // Create table
+            html += '<table class="data-table"><thead><tr>';
+
+            // Get all unique keys
+            const allKeys = new Set();
+            data.forEach((item) => {
+              Object.keys(item).forEach((key) => allKeys.add(key));
+            });
+
+            // Create headers
+            allKeys.forEach((key) => {
+              html += `<th>${key}</th>`;
+            });
+            html += "<th>Actions</th></tr></thead><tbody>";
+
+            // Create rows
+            data.forEach((item) => {
+              html += "<tr>";
+              allKeys.forEach((key) => {
+                const value = item[key];
+                html += `<td>${typeof value === "object" ? JSON.stringify(value) : value}</td>`;
+              });
+              html += `<td><button class="btn-danger" onclick="deleteItem('${collectionName}', '${item.id}')">Delete</button></td>`;
+              html += "</tr>";
+            });
+
+            html += "</tbody></table>";
+          }
+
+          // Add form to create new item
+          html += `
+            <h4 style="margin-top: 1.5rem;">Add New Item</h4>
+            <form id="add-item-form" onsubmit="addItem(event, '${collectionName}')">
+              <div class="form-group">
+                <label>JSON Data</label>
+                <textarea id="new-item-data" placeholder='{"name": "John", "age": 30}' rows="4" required></textarea>
+              </div>
+              <button type="submit">Add Item</button>
+            </form>
+          `;
+
+          document.getElementById("modal-title").textContent =
+            `${collectionName} Details`;
+          document.getElementById("collection-details").innerHTML = html;
+          document.getElementById("collection-modal").style.display = "block";
+        } catch (error) {
+          console.error("Error viewing collection:", error);
+          showNotification("Error loading collection data", false);
+        }
+      }
+
+      // Add item to collection
+      async function addItem(event, collectionName) {
+        event.preventDefault();
+        const jsonData = document.getElementById("new-item-data").value;
+
+        try {
+          const data = JSON.parse(jsonData);
+
+          const response = await fetch(`/${collectionName}/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            showNotification("Item added successfully!");
+            document.getElementById("new-item-data").value = "";
+            viewCollection(collectionName); // Refresh the view
+          } else {
+            const error = await response.json();
+            showNotification(error.error || "Failed to add item", false);
+          }
+        } catch (error) {
+          if (error instanceof SyntaxError) {
+            showNotification("Invalid JSON format", false);
+          } else {
+            console.error("Error adding item:", error);
+            showNotification("Error adding item", false);
+          }
+        }
+      }
+
+      // Delete item from collection
+      async function deleteItem(collectionName, itemId) {
+        if (!confirm(`Are you sure you want to delete item ${itemId}?`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/${collectionName}/${itemId}`, {
+            method: "DELETE",
+          });
+
+          if (response.ok) {
+            showNotification("Item deleted successfully!");
+            viewCollection(collectionName); // Refresh the view
+          } else {
+            const error = await response.json();
+            showNotification(error.error || "Failed to delete item", false);
+          }
+        } catch (error) {
+          console.error("Error deleting item:", error);
+          showNotification("Error deleting item", false);
+        }
+      }
+
+      // Delete collection
+      async function deleteCollection(collectionName) {
+        if (
+          !confirm(
+            `Are you sure you want to delete the collection "${collectionName}"? This will remove all data.`,
+          )
+        ) {
+          return;
+        }
+
+        // We don't have a direct API to delete collections, so we'll just remove it from UI
+        // In a real implementation, you'd want an API endpoint for this
+        collections = collections.filter((c) => c !== collectionName);
+        renderCollections();
+        showNotification(`Collection "${collectionName}" removed from view`);
+        closeModal();
+      }
+
+      // Close modal
+      function closeModal() {
+        document.getElementById("collection-modal").style.display = "none";
+      }
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("collection-modal");
+        if (event.target === modal) {
+          closeModal();
+        }
+      };
+
+      // Close modal with Escape key
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          closeModal();
+        }
+      });
+    </script>
+  </body>
+</html>

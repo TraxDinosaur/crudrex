@@ -1,0 +1,10 @@
+[project]
+name = "crudrex"
+version = "0.1.2"
+description = "A modern mock JSON server for testing HTTP requests and learning CRUD operations, similar to mockapi.io or crudcrud.com."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "flask>=2.0.0",
+    "flask-cors>=3.0.0",
+]
